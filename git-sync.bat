@@ -34,7 +34,52 @@ if errorlevel 1 (
 for /f "tokens=*" %%a in ('git rev-parse --abbrev-ref HEAD') do set BRANCH=%%a
 echo [信息] 当前分支: %BRANCH%
 
-:: 检查是否有冲突文件
+:: 检查并更新 .gitignore
+echo [检查] 验证 .gitignore 配置...
+if not exist .gitignore (
+    echo [创建] .gitignore 文件...
+    (
+        echo # Dependencies
+        echo node_modules/
+        echo **/node_modules/
+        echo.
+        echo # Python
+        echo __pycache__/
+        echo *.pyc
+        echo *.pyo
+        echo *.pyd
+        echo .Python
+        echo.
+        echo # Lock files
+        echo package-lock.json
+        echo yarn.lock
+        echo bun.lock
+        echo.
+        echo # Environment
+        echo .env
+        echo .env.local
+        echo.
+        echo # OS
+        echo .DS_Store
+        echo Thumbs.db
+    ) > .gitignore
+    git add .gitignore
+    echo [信息] 已创建 .gitignore 并添加 Python 缓存忽略规则
+) else (
+    findstr /C:"__pycache__/" .gitignore >nul 2>&1
+    if errorlevel 1 (
+        echo [更新] 添加 Python 缓存规则到 .gitignore...
+        (
+            echo.
+            echo # Python cache
+            echo __pycache__/
+            echo *.pyc
+            echo *.pyo
+            echo *.pyd
+        ) >> .gitignore
+        git add .gitignore
+    )
+)
 for /f "tokens=*" %%a in ('git diff --name-only --diff-filter=U 2^>nul') do (
     if not "%%a"=="" (
         echo [错误] 存在未解决的冲突文件: %%a
@@ -43,17 +88,30 @@ for /f "tokens=*" %%a in ('git diff --name-only --diff-filter=U 2^>nul') do (
     )
 )
 
-:: 检查是否有变更
-git diff --quiet
-git diff --quiet --cached
-if %errorlevel% equ 0 (
+:: 检查是否有变更（包括未跟踪文件）
+for /f "tokens=*" %%a in ('git status --porcelain 2^>nul') do (
+    if not "%%a"=="" (
+        set HAS_CHANGES=1
+        goto :has_changes
+    )
+)
+set HAS_CHANGES=0
+
+:has_changes
+if %HAS_CHANGES% equ 0 (
     echo [信息] 没有需要提交的变更
     goto :pull
 )
 
-:: 添加所有变更
-echo [1/4] 添加变更...
-git add .
+:: 显示变更摘要
+echo.
+echo === 待提交变更 ===
+git status --short
+echo.
+
+:: 添加所有变更（包括新文件）
+echo [1/4] 添加所有变更（含新文件）...
+git add -A
 
 :: 生成提交信息（使用时间戳）
 for /f "tokens=*" %%a in ('powershell -Command "Get-Date -Format 'yyyy-MM-dd HH:mm:ss'"') do set TIMESTAMP=%%a
@@ -95,4 +153,8 @@ if errorlevel 1 (
 )
 
 echo [完成] 同步成功！
+echo.
+echo === 最新提交 ===
+git log --oneline -3
+echo.
 exit /b 0
