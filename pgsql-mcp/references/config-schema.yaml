@@ -1,0 +1,62 @@
+# PostgreSQL MCP 配置 schema
+
+datasources:
+  # 简短ID，用于工具参数
+  dev:
+    # 显示名称
+    name: "开发环境"
+    # 详细描述，用于自然语言匹配
+    description: "项目开发环境数据库，用于日常开发和调试"
+    # 标签/别名，支持多种叫法
+    tags: ["开发", "dev", "development", "本地", "daily"]
+    host: 10.9.192.24
+    port: 5432
+    database: hcyy_lmp
+    username: hcyy_lmp
+    password_env: PG_DEV_PASSWORD
+
+  test:
+    name: "测试环境"
+    description: "项目测试环境数据库，用于SIT测试和集成测试"
+    tags: ["测试", "test", "testing", "sit", "集成测试"]
+    host: 10.9.192.35
+    port: 5432
+    database: hcyy_lmp
+    username: hcyy_lmp
+    password_env: PG_TEST_PASSWORD
+
+  prod:
+    name: "生产环境"
+    description: "项目生产环境数据库，线上正式数据，只读操作"
+    tags: ["生产", "prod", "production", "线上", "正式"]
+    host: prod.db.company.com
+    port: 5432
+    database: hcyy_lmp
+    username: hcyy_lmp_readonly
+    password_env: PG_PROD_PASSWORD
+    ssl: true
+    # 安全设置
+    readonly: true  # 只允许查询操作
+
+  # 项目专属数据源
+  order-db:
+    name: "订单服务库"
+    description: "订单系统专属数据库，存储订单、支付相关数据"
+    tags: ["订单", "order", "支付", "payment"]
+    host: 10.9.192.100
+    database: order_service
+    username: order_app
+    password_env: ORDER_DB_PASSWORD
+
+# 自然语言匹配配置
+nlp:
+  # 匹配规则
+  rules:
+    - pattern: "(开发|dev|daily|本地).*?(库|数据库|环境)"
+      datasource: dev
+    - pattern: "(测试|test|sit).*?(库|数据库|环境)"
+      datasource: test
+    - pattern: "(生产|prod|线上|正式).*?(库|数据库|环境)"
+      datasource: prod
+    - pattern: "(订单|order).*?(库|数据库)"
+      datasource: order-db
