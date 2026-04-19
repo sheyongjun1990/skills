@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git -C ../skills status)"
+      "Bash(git -C ../skills status)",
+      "Bash(git fetch origin master)",
+      "Bash(git stash *)"
     ],
     "deny": [],
     "ask": []

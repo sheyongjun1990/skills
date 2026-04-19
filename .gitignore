@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Lock files (optional)
+package-lock.json
+yarn.lock
+bun.lock
+
+# Environment
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
